@@ -16,6 +16,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import net.minecraft.world.phys.AABB;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 
 public class BG2Data extends SavedData {
     private static final String NAME = "buildinggadgets2";
+    public static final int MAX_TEMPLATE_BLOCKS = 100_000;
 
     private static final Codec<StatePos> STATEPOS_CODEC = CompoundTag.CODEC.xmap(StatePos::new, StatePos::getTag);
     private static final Codec<TagPos> TAGPOS_CODEC = CompoundTag.CODEC.xmap(TagPos::new, TagPos::getTag);
@@ -179,19 +181,35 @@ public class BG2Data extends SavedData {
     public static CompoundTag statePosListToNBTMapArray(ArrayList<StatePos> list) {
         CompoundTag tag = new CompoundTag();
         if (list == null || list.isEmpty()) return tag;
+        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        for (StatePos entry : list) {
+            if (entry == null || entry.state == null || entry.pos == null) return tag;
+            minX = Math.min(minX, entry.pos.getX());
+            minY = Math.min(minY, entry.pos.getY());
+            minZ = Math.min(minZ, entry.pos.getZ());
+            maxX = Math.max(maxX, entry.pos.getX());
+            maxY = Math.max(maxY, entry.pos.getY());
+            maxZ = Math.max(maxZ, entry.pos.getZ());
+        }
+        BlockPos start = new BlockPos(minX, minY, minZ);
+        BlockPos end = new BlockPos(maxX, maxY, maxZ);
+        long volume = templateVolume(start, end);
+        if (volume < 1 || volume > MAX_TEMPLATE_BLOCKS) return tag;
+
         ArrayList<BlockState> blockStateMap = StatePos.getBlockStateMap(list);
+        if (!blockStateMap.contains(Blocks.AIR.defaultBlockState()))
+            blockStateMap.add(Blocks.AIR.defaultBlockState());
         ListTag blockStateMapList = StatePos.getBlockStateNBT(blockStateMap);
-        int[] blocklist = new int[list.size()];
+        int[] blocklist = new int[(int) volume];
         final int[] counter = {0};
-        BlockPos start = list.get(0).pos;
-        BlockPos end = list.get(list.size() - 1).pos;
         AABB aabb = VecHelpers.aabbFromBlockPos(start, end);
 
-        Map<BlockPos, BlockState> blockStateByPos = list.stream()
-                .collect(Collectors.toMap(e -> e.pos, e -> e.state));
+        Map<BlockPos, BlockState> blockStateByPos = new HashMap<>();
+        for (StatePos entry : list) blockStateByPos.put(entry.pos, entry.state);
 
         BlockPos.betweenClosedStream(aabb).map(BlockPos::immutable).forEach(pos -> {
-            BlockState blockState = blockStateByPos.get(pos);
+            BlockState blockState = blockStateByPos.getOrDefault(pos, Blocks.AIR.defaultBlockState());
             blocklist[counter[0]++] = blockStateMap.indexOf(blockState);
         });
         tag.put("startpos", writeBlockPos(start));
@@ -220,12 +238,20 @@ public class BG2Data extends SavedData {
 
     public static ArrayList<StatePos> statePosListFromNBTMapArray(CompoundTag tag) {
         ArrayList<StatePos> statePosList = new ArrayList<>();
-        if (!tag.contains("blockstatemap") || !tag.contains("statelist")) return statePosList;
+        if (tag == null || !tag.contains("blockstatemap") || !tag.contains("statelist")
+                || !tag.contains("startpos") || !tag.contains("endpos")) return statePosList;
         ArrayList<BlockState> blockStateMap = StatePos.getBlockStateMapFromNBT(tag.getListOrEmpty("blockstatemap"));
+        if (blockStateMap.isEmpty() || blockStateMap.size() > MAX_TEMPLATE_BLOCKS) return statePosList;
         BlockPos start = readBlockPos(tag, "startpos");
         BlockPos end = readBlockPos(tag, "endpos");
+        long volume = templateVolume(start, end);
+        if (volume < 1 || volume > MAX_TEMPLATE_BLOCKS) return statePosList;
         AABB aabb = VecHelpers.aabbFromBlockPos(start, end);
         int[] blocklist = tag.getIntArray("statelist").orElse(new int[0]);
+        if (blocklist.length != volume) return statePosList;
+        for (int index : blocklist) {
+            if (index < 0 || index >= blockStateMap.size()) return statePosList;
+        }
         final int[] counter = {0};
         BlockPos.betweenClosedStream(aabb).map(BlockPos::immutable).forEach(pos -> {
             int blockStateLookup = blocklist[counter[0]++];
@@ -233,6 +259,20 @@ public class BG2Data extends SavedData {
             statePosList.add(new StatePos(blockState, pos));
         });
         return statePosList;
+    }
+
+    private static long templateVolume(BlockPos start, BlockPos end) {
+        long[] spans = {
+                Math.abs((long) end.getX() - start.getX()) + 1,
+                Math.abs((long) end.getY() - start.getY()) + 1,
+                Math.abs((long) end.getZ() - start.getZ()) + 1
+        };
+        long volume = 1;
+        for (long span : spans) {
+            if (span < 1 || volume > MAX_TEMPLATE_BLOCKS / span) return -1;
+            volume *= span;
+        }
+        return volume;
     }
 
     public static BG2Data get(ServerLevel world) {

@@ -72,6 +72,8 @@ public class GadgetCutPaste extends BaseGadget {
 
     @Override
     InteractionResult onAction(ItemActionContext context) {
+        // Moving block entities and their inventory data needs separate multiplayer validation.
+        if (!context.player().isCreative()) return InteractionResult.PASS;
         var gadget = context.stack();
 
         var mode = GadgetNBT.getMode(gadget);
@@ -122,6 +124,7 @@ public class GadgetCutPaste extends BaseGadget {
     }
 
     public void cutAndStore(Player player, ItemStack gadget) {
+        if (!player.isCreative()) return;
         if (ServerTickHandler.gadgetWorking(GadgetNBT.getUUID(gadget)))
             return; // Do nothing if this gadget is already doing stuff!
         ArrayList<StatePos> buildList = new ArrayList<>();

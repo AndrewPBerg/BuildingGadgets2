@@ -10,45 +10,45 @@ public class GuiTextFieldBase extends EditBox {
     private boolean suspended;
     private String valueDefault, valueOld;
     private BiConsumer<GuiTextFieldBase, String> postModification;
+    private boolean numericOnly;
 
     public GuiTextFieldBase(Font fontRenderer, int x, int y, int width) {
         super(fontRenderer, x, y, width, 15, Component.empty());
 
         setMaxLength(50);
-        setFilter(s -> {
-            valueOld = getValue();
-            return true;
-        });
+        valueOld = getValue();
+        setResponder(this::onValueChanged);
     }
 
-    @Override
-    public void setValue(String textIn) {
-        super.setValue(textIn);
-        postModification(textIn);
-    }
-
-    public void postModification(String text) {
-        if (!suspended && postModification != null) {
+    private void onValueChanged(String value) {
+        if (suspended) return;
+        if (numericOnly && !isValidNumber(value)) {
             suspended = true;
-            postModification.accept(this, valueOld);
+            super.setValue(valueOld);
+            suspended = false;
+            return;
+        }
+        String previous = valueOld;
+        valueOld = value;
+        if (postModification != null) {
+            suspended = true;
+            postModification.accept(this, previous);
             suspended = false;
         }
     }
 
+    private boolean isValidNumber(String value) {
+        if (value == null || value.isEmpty() || "-".equals(value)) return true;
+        try {
+            Integer.parseInt(value);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
     public GuiTextFieldBase restrictToNumeric() {
-        setFilter(s -> {
-            valueOld = getValue();
-            if (s == null || s.isEmpty() || "-".equals(s))
-                return true;
-
-            try {
-                Integer.parseInt(s);
-                return true;
-            } catch (NumberFormatException e) {
-                return false;
-            }
-        });
-
+        numericOnly = true;
         return this;
     }
 

@@ -5,6 +5,7 @@
 !/.gitignore
 !/LICENSE
 !/README.md
+!/SURVIVALPP_PORT.md
 !/build.gradle
 !/gradle/
 !/gradle.properties

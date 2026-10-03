@@ -128,6 +128,7 @@ public class BG2LanguageProvider extends LanguageProvider {
 
         //Messages to Player
         add("buildinggadgets2.messages.invalidblock", "Invalid Block");
+        add("buildinggadgets2.messages.invalidtemplate", "Template is too large, malformed, or contains unsupported blocks");
         add("buildinggadgets2.messages.anchorcleared", "Anchor Cleared");
         add("buildinggadgets2.messages.anchorset", "Anchor Set to: ");
         add("buildinggadgets2.messages.overwritecut", "Tool already has cut data stored - click again to OVERWRITE this data");
@@ -153,4 +154,3 @@ public class BG2LanguageProvider extends LanguageProvider {
         add("buildinggadgets2.messages.redprintgivefail", "Failed to give redprint %s to %s");
     }
 }
-

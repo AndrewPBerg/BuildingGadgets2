@@ -24,6 +24,7 @@
   "buildinggadgets2.messages.cutblocks": "Cut %d blocks",
   "buildinggadgets2.messages.cutinprogress": "Cut in progress - Please Wait!",
   "buildinggadgets2.messages.invalidblock": "Invalid Block",
+  "buildinggadgets2.messages.invalidtemplate": "Template is too large, malformed, or contains unsupported blocks",
   "buildinggadgets2.messages.namealreadyexists": "This name is already in use, either delete it with commands or give a new name.",
   "buildinggadgets2.messages.namerequired": "Name Required for Redprints. Please try again.",
   "buildinggadgets2.messages.notenoughenergy": "Not enough energy for cut, need: %d. Have: %d",

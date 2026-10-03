@@ -176,7 +176,7 @@ public class ModeRadialMenu extends Screen {
                 if (send) {
                     var mode = GadgetNBT.getMode(tool);
                     if (GadgetNBT.hasCopyUUID(tool) && mode.getId().getPath().equals("paste")) {
-                        getMinecraft().setScreen(new MaterialListGUI(tool));
+                        getMinecraft().gui.setScreen(new MaterialListGUI(tool));
                     }
                 }
 
@@ -188,14 +188,16 @@ public class ModeRadialMenu extends Screen {
 
         //Cut Paste or Copy Paste Gadget Only
         if (tool.getItem() instanceof GadgetCutPaste || tool.getItem() instanceof GadgetCopyPaste) {
-            Button pastereplace = new PositionedIconActionable(Component.translatable("buildinggadgets2.screen.paste_replace"), "paste_replace", ScreenPosition.RIGHT, true, send -> {
-                if (send) {
-                    ClientPacketDistributor.sendToServer(new ToggleSettingPayload(GadgetNBT.ToggleableSettings.PASTE_REPLACE.getName()));
-                }
+            if (this.getMinecraft().player != null && this.getMinecraft().player.isCreative()) {
+                Button pastereplace = new PositionedIconActionable(Component.translatable("buildinggadgets2.screen.paste_replace"), "paste_replace", ScreenPosition.RIGHT, true, send -> {
+                    if (send) {
+                        ClientPacketDistributor.sendToServer(new ToggleSettingPayload(GadgetNBT.ToggleableSettings.PASTE_REPLACE.getName()));
+                    }
 
-                return GadgetNBT.getPasteReplace(tool);
-            });
-            this.addRenderableWidget(pastereplace);
+                    return GadgetNBT.getPasteReplace(tool);
+                });
+                this.addRenderableWidget(pastereplace);
+            }
 
             addRenderableWidget(new PositionedIconActionable(Component.translatable("buildinggadgets2.radialmenu.copypastemenu"), "copypaste_opengui", ScreenPosition.RIGHT, false, send -> {
                 if (!send)
@@ -205,9 +207,9 @@ public class ModeRadialMenu extends Screen {
 
                 getMinecraft().player.closeContainer();
                 if (mode.getId().getPath().equals("paste"))
-                    getMinecraft().setScreen(new PasteGUI(tool));
+                    getMinecraft().gui.setScreen(new PasteGUI(tool));
                 else
-                    getMinecraft().setScreen(new CopyGUI(tool));
+                    getMinecraft().gui.setScreen(new CopyGUI(tool));
                 return true;
             }));
 

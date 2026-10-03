@@ -46,6 +46,7 @@ public class GadgetUtils {
 
     public static boolean isValidBlockState(BlockState blockState, Level level, BlockPos blockPos) {
         if (blockState.is(BG2Tags.BG2DENY)) return false;
+        if (blockState.hasBlockEntity()) return false;
         if (blockState.getDestroySpeed(level, blockPos) < 0) return false;
         if (!blockState.getFluidState().isEmpty() && !blockState.getFluidState().isSource()) return false;
         return true;
@@ -55,6 +56,16 @@ public class GadgetUtils {
         if (blockState.isAir()) return false;
         if (blockState.getDestroySpeed(level, blockPos) < 0) return false;
         if (blockState.getBlock() instanceof RenderBlock) return false;
+        return true;
+    }
+
+    /** Reject malformed or unsafe client-provided templates before storing them on a server. */
+    public static boolean isSafeTemplate(List<StatePos> entries, Level level) {
+        if (entries == null || entries.isEmpty() || entries.size() > BG2Data.MAX_TEMPLATE_BLOCKS) return false;
+        for (StatePos entry : entries) {
+            if (entry == null || entry.pos == null || entry.state == null) return false;
+            if (!entry.state.isAir() && !isValidBlockState(entry.state, level, entry.pos)) return false;
+        }
         return true;
     }
 

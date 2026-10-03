@@ -84,6 +84,9 @@ public class GadgetDestruction extends BaseGadget {
 
     @Override
     InteractionResult onAction(ItemActionContext context) {
+        // Survival++ keeps excavation in Building Wands, which preserves drops and tool wear.
+        // Upstream's destruction gadget intentionally voids the removed blocks.
+        if (!context.player().isCreative()) return InteractionResult.PASS;
         var gadget = context.stack();
 
         BlockPos anchor = GadgetNBT.getAnchorPos(gadget);

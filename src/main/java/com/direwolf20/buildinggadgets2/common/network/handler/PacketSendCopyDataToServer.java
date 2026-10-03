@@ -7,8 +7,10 @@ import com.direwolf20.buildinggadgets2.common.network.data.SendCopyDataToServerP
 import com.direwolf20.buildinggadgets2.common.worlddata.BG2Data;
 import com.direwolf20.buildinggadgets2.setup.Registration;
 import com.direwolf20.buildinggadgets2.util.GadgetNBT;
+import com.direwolf20.buildinggadgets2.util.GadgetUtils;
 import com.direwolf20.buildinggadgets2.util.datatypes.StatePos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -41,6 +43,12 @@ public class PacketSendCopyDataToServer {
             if (templateStack.isEmpty())
                 return;
 
+            ArrayList<StatePos> buildList = BG2Data.statePosListFromNBTMapArray(payload.compoundTag());
+            if (!GadgetUtils.isSafeTemplate(buildList, player.level())) {
+                player.sendOverlayMessage(Component.translatable("buildinggadgets2.messages.invalidtemplate"));
+                return;
+            }
+
             if (templateStack.is(Items.PAPER)) {
                 container.setItem(1, container.getStateId(), new ItemStack(Registration.Template.get()));
                 templateStack = container.getSlot(1).getItem();
@@ -48,7 +56,6 @@ public class PacketSendCopyDataToServer {
 
             BG2Data bg2Data = BG2Data.get(Objects.requireNonNull(context.player().level().getServer()).overworld());
 
-            ArrayList<StatePos> buildList = BG2Data.statePosListFromNBTMapArray(payload.compoundTag());
             bg2Data.addToCopyPaste(GadgetNBT.getUUID(templateStack), buildList);
             GadgetNBT.setCopyUUID(templateStack);
 

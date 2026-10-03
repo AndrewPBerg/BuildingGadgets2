@@ -399,7 +399,7 @@ public class TemplateManagerGUI extends AbstractContainerScreen<TemplateManagerC
             CompoundTag deserializedNBT = TagParser.parseCompoundFully(template.statePosArrayList);
             statePosArrayList = BG2Data.statePosListFromNBTMapArray(deserializedNBT);
         } catch (Exception e) {
-            getMinecraft().gui.setOverlayMessage(Component.translatable("buildinggadgets2.screen.invalidjson"), false);
+            getMinecraft().player.sendOverlayMessage(Component.translatable("buildinggadgets2.screen.invalidjson"));
             // Handle the exception if the string isn't a valid NBT
             return;
         }

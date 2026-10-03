@@ -77,7 +77,9 @@ public class GadgetCopyPaste extends BaseGadget {
             BG2Data bg2Data = BG2Data.get(Objects.requireNonNull(context.player().level().getServer()).overworld());
             ArrayList<StatePos> buildList = bg2Data.getCopyPasteList(uuid, false);
             UUID buildUUID;
-            boolean replace = GadgetNBT.getPasteReplace(gadget);
+            // Upstream replacement discards the overwritten blocks. Survival pastes only into
+            // replaceable space; Creative keeps the original replacement tool.
+            boolean replace = context.player().isCreative() && GadgetNBT.getPasteReplace(gadget);
             if (!replace)
                 buildUUID = BuildingUtils.build(context.level(), context.player(), buildList, getHitPos(context).above().offset(GadgetNBT.getRelativePaste(gadget)), gadget, true);
             else
